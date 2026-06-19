@@ -1,0 +1,199 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import type { SysCraftNodeData, NodeType } from "@/types/simulation";
+import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio } from "lucide-react";
+import PacketEdge from "./PacketEdge";
+
+const nodeWidth = 160;
+const nodeHeight = 90;
+const nodeRadius = 8;
+
+type LucideIcon = typeof Zap;
+
+const colorMap: Record<NodeType, { bg: string; hover: string; border: string; icon: string }> = {
+  client: { bg: "#191919", hover: "#1a1c20", border: "#7d8187", icon: "#ffc285" },
+  loadBalancer: { bg: "#191919", hover: "#1a1c20", border: "#c4b5fd", icon: "#c4b5fd" },
+  apiGateway: { bg: "#191919", hover: "#1a1c20", border: "#a0c3ec", icon: "#a0c3ec" },
+  webServer: { bg: "#191919", hover: "#1a1c20", border: "#7d8187", icon: "#ffffff" },
+  cache: { bg: "#191919", hover: "#1a1c20", border: "#ff7a17", icon: "#ff7a17" },
+  sqlDb: { bg: "#191919", hover: "#1a1c20", border: "#8b5cf6", icon: "#8b5cf6" },
+  noSqlDb: { bg: "#191919", hover: "#1a1c20", border: "#f97316", icon: "#f97316" },
+  messageQueue: { bg: "#191919", hover: "#1a1c20", border: "#ec4899", icon: "#ec4899" },
+};
+
+const iconMap: Record<NodeType, LucideIcon> = {
+  client: Zap,
+  loadBalancer: Activity,
+  apiGateway: GitBranch,
+  webServer: Server,
+  cache: HardDrive,
+  sqlDb: Database,
+  noSqlDb: Database,
+  messageQueue: Radio,
+};
+
+function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeData>>) {
+  const colors = colorMap[data.nodeType] || colorMap.client;
+  const Icon = iconMap[data.nodeType] || Zap;
+
+  const renderMetrics = () => {
+    const m = data.metrics as any;
+    const c = data.config as any;
+    switch (data.nodeType) {
+      case "client":
+        return (
+          <>
+            <span>RPS: {c.rps}</span>
+            <span>Fail: {m.failedRequests}</span>
+            <span>Lat: {m.avgLatencyMs}ms</span>
+          </>
+        );
+      case "loadBalancer":
+        return (
+          <>
+            <span>{c.algorithm.replace("-", " ")}</span>
+            <span>Active: {m.activeConnections}</span>
+          </>
+        );
+      case "apiGateway":
+        return (
+          <>
+            <span>Rate: {c.rateLimitRps}</span>
+            <span>Routed: {m.requestsRouted}</span>
+          </>
+        );
+      case "webServer":
+        return (
+          <>
+            <span>CPU: {m.cpuLoad}%</span>
+            <span>Q: {m.queueSize}</span>
+          </>
+        );
+      case "cache":
+        return (
+          <>
+            <span>Hit: {(m.hitRate * 100).toFixed(0)}%</span>
+            <span>{m.currentSizeMB}MB</span>
+          </>
+        );
+      case "sqlDb":
+      case "noSqlDb":
+        return (
+          <>
+            <span>{c.replicationMode}</span>
+            <span>Lag: {c.replicationLagMs}ms</span>
+          </>
+        );
+      case "messageQueue":
+        return (
+          <>
+            <span>Rate: {c.processingRate}/s</span>
+            <span>Depth: {m.queueDepth}</span>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div
+      style={{
+        width: nodeWidth,
+        height: nodeHeight,
+        borderRadius: nodeRadius,
+        background: colors.bg,
+        border: selected ? `1px solid #ffffff` : `1px solid #212327`,
+        transition: "border-color 100ms ease, box-shadow 100ms ease, background 100ms ease",
+      }}
+    >
+      <Handle
+        id="top-source"
+        type="source"
+        position={Position.Top}
+        className="node-handle"
+        style={{
+          background: "#ffffff",
+          width: 10,
+          height: 10,
+          border: "2px solid #0a0a0a",
+          borderRadius: "50%",
+          boxShadow: "0 0 0 0 transparent",
+          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
+        }}
+      />
+      <Handle
+        id="top-target"
+        type="target"
+        position={Position.Top}
+        className="node-handle"
+        style={{
+          background: "#ffffff",
+          width: 10,
+          height: 10,
+          border: "2px solid #0a0a0a",
+          borderRadius: "50%",
+          boxShadow: "0 0 0 0 transparent",
+          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
+        }}
+      />
+      <div className="flex flex-col h-full items-center justify-center p-2 text-center text-ink">
+        <Icon className="h-5 w-5 mb-1" style={{ color: colors.icon }} />
+        <div className="text-sm font-normal leading-tight truncate max-w-full">
+          {data.label}
+        </div>
+        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-body-mid font-mono flex-wrap justify-center">
+          {renderMetrics()}
+        </div>
+      </div>
+      <Handle
+        id="bottom-target"
+        type="target"
+        position={Position.Bottom}
+        className="node-handle"
+        style={{
+          background: "#ffffff",
+          width: 10,
+          height: 10,
+          border: "2px solid #0a0a0a",
+          borderRadius: "50%",
+          boxShadow: "0 0 0 0 transparent",
+          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
+        }}
+      />
+      <Handle
+        id="bottom-source"
+        type="source"
+        position={Position.Bottom}
+        className="node-handle"
+        style={{
+          background: "#ffffff",
+          width: 10,
+          height: 10,
+          border: "2px solid #0a0a0a",
+          borderRadius: "50%",
+          boxShadow: "0 0 0 0 transparent",
+          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
+        }}
+      />
+    </div>
+  );
+}
+
+const nodeTypes = {
+  client: SysCraftNodeComponent,
+  loadBalancer: SysCraftNodeComponent,
+  apiGateway: SysCraftNodeComponent,
+  webServer: SysCraftNodeComponent,
+  cache: SysCraftNodeComponent,
+  sqlDb: SysCraftNodeComponent,
+  noSqlDb: SysCraftNodeComponent,
+  messageQueue: SysCraftNodeComponent,
+};
+
+const edgeTypes = {
+  packetEdge: PacketEdge,
+};
+
+export { nodeTypes, edgeTypes };
