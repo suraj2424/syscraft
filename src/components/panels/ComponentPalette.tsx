@@ -42,7 +42,7 @@ export function ComponentPalette() {
   return (
     <div className="h-full flex flex-col overflow-y-auto">
       <div className="px-4 py-3 border-b border-hairline flex-shrink-0">
-        <div className="text-[11px] font-normal uppercase tracking-wider text-body-mid">
+        <div className="text-[12px] font-normal uppercase tracking-[1.2px] text-body-mid">
           Components
         </div>
       </div>
@@ -56,7 +56,7 @@ export function ComponentPalette() {
                 key={id}
                 draggable
                 onDragStart={(e) => onDragStart(e, id)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-canvas-card border border-hairline hover:border-ink/30 transition-colors cursor-grab active:cursor-grabbing"
+                className="flex items-center gap-3 px-3 py-2 rounded-sm bg-canvas-card border border-hairline hover:border-white/30 transition-colors cursor-grab active:cursor-grabbing"
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0"
@@ -73,7 +73,7 @@ export function ComponentPalette() {
         </div>
 
         <div className="px-4 py-3 border-t border-hairline">
-          <div className="text-[11px] font-normal uppercase tracking-wider text-body-mid">
+          <div className="text-[12px] font-normal uppercase tracking-[1.2px] text-body-mid">
             Scenarios
           </div>
         </div>
@@ -83,7 +83,7 @@ export function ComponentPalette() {
             <button
               key={scenario.id}
               onClick={() => loadScenario(scenario.id)}
-              className="w-full text-left px-3 py-2 rounded-lg bg-canvas-card border border-hairline hover:border-ink/30 transition-colors group"
+              className="w-full text-left px-3 py-2 rounded-sm bg-canvas-card border border-hairline hover:border-white/30 transition-colors group"
             >
               <div className="text-[13px] font-normal text-ink group-hover:text-ink-hover">
                 {scenario.name}

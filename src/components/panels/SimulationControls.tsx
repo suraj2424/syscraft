@@ -27,15 +27,15 @@ function ActionBtn({
 
   const variants: Record<ActionVariant, string> = {
     neutral:
-      `${base} bg-canvas text-body-mid border-hairline hover:bg-canvas-soft hover:text-ink`,
+      `${base} bg-canvas text-body-mid border-white/25 hover:bg-canvas-soft hover:text-ink`,
     success:
       `${base} bg-ink text-canvas border-ink`,
     danger:
-      `${base} bg-canvas text-red-400 border-hairline hover:bg-red-500/10`,
+      `${base} bg-canvas text-red-400 border-white/25 hover:bg-red-500/10`,
     amber:
-      `${base} bg-canvas text-amber-400 border-hairline hover:bg-amber-500/10`,
+      `${base} bg-canvas text-amber-400 border-white/25 hover:bg-amber-500/10`,
     red:
-      `${base} bg-canvas text-red-400 border-hairline hover:bg-red-500/10`,
+      `${base} bg-canvas text-red-400 border-white/25 hover:bg-red-500/10`,
   };
 
   return (
@@ -116,7 +116,7 @@ export function SimulationControls() {
           onClick={editor.undo}
           disabled={!editor.canUndo}
           title="Undo (Ctrl+Z)"
-          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-canvas text-body-mid border border-hairline transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-canvas-soft hover:text-ink"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-canvas text-body-mid border border-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-canvas-soft hover:text-ink"
         >
           <Undo2 className="h-3.5 w-3.5" />
         </button>
@@ -124,7 +124,7 @@ export function SimulationControls() {
           onClick={editor.redo}
           disabled={!editor.canRedo}
           title="Redo (Ctrl+Y)"
-          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-canvas text-body-mid border border-hairline transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-canvas-soft hover:text-ink"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-canvas text-body-mid border border-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-canvas-soft hover:text-ink"
         >
           <Redo2 className="h-3.5 w-3.5" />
         </button>
@@ -163,7 +163,7 @@ export function SimulationControls() {
                 className={`h-7 px-2 rounded-full text-xs font-normal transition-colors ${
                   speed === s
                     ? "bg-ink text-canvas border border-ink"
-                    : "bg-canvas text-body-mid border border-hairline hover:bg-canvas-soft hover:text-ink"
+                    : "bg-canvas text-body-mid border border-white/25 hover:bg-canvas-soft hover:text-ink"
                 }`}
               >
                 {s}×

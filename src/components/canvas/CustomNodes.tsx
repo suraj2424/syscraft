@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type Node, type NodeProps, useReactFlow } from "@xyflow/react";
 import type { SysCraftNodeData, NodeType } from "@/types/simulation";
 import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio } from "lucide-react";
 import PacketEdge from "./PacketEdge";
@@ -36,6 +36,9 @@ const iconMap: Record<NodeType, LucideIcon> = {
 function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeData>>) {
   const colors = colorMap[data.nodeType] || colorMap.client;
   const Icon = iconMap[data.nodeType] || Zap;
+  const { getNode } = useReactFlow();
+  
+  const isClientNode = data.nodeType === "client";
 
   const renderMetrics = () => {
     const m = data.metrics as any;
@@ -100,81 +103,50 @@ function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeDa
   return (
     <div
       style={{
+        position: "relative",
         width: nodeWidth,
         height: nodeHeight,
         borderRadius: nodeRadius,
         background: colors.bg,
-        border: selected ? `1px solid #ffffff` : `1px solid #212327`,
+        border: selected ? `1.5px solid #ffffff` : `1px solid #212327`,
         transition: "border-color 100ms ease, box-shadow 100ms ease, background 100ms ease",
       }}
     >
       <Handle
-        id="top-source"
-        type="source"
-        position={Position.Top}
-        className="node-handle"
-        style={{
-          background: "#ffffff",
-          width: 10,
-          height: 10,
-          border: "2px solid #0a0a0a",
-          borderRadius: "50%",
-          boxShadow: "0 0 0 0 transparent",
-          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
-        }}
-      />
-      <Handle
         id="top-target"
         type="target"
         position={Position.Top}
-        className="node-handle"
+        className={`node-handle ${isClientNode ? "invalid-target" : ""}`}
         style={{
-          background: "#ffffff",
+          top: -5,
+          left: "50%",
+          transform: "translateX(-50%)",
           width: 10,
           height: 10,
-          border: "2px solid #0a0a0a",
-          borderRadius: "50%",
-          boxShadow: "0 0 0 0 transparent",
-          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
         }}
       />
       <div className="flex flex-col h-full items-center justify-center p-2 text-center text-ink">
-        <Icon className="h-5 w-5 mb-1" style={{ color: colors.icon }} />
-        <div className="text-sm font-normal leading-tight truncate max-w-full">
-          {data.label}
+        <div className="flex items-center gap-1">
+          <Icon className="h-3 w-3" style={{ color: colors.icon }} />
+          <div className="text-sm font-normal max-w-full">
+            {data.label}
+          </div>
         </div>
         <div className="flex items-center gap-1.5 mt-1 text-[10px] text-body-mid font-mono flex-wrap justify-center">
           {renderMetrics()}
         </div>
       </div>
       <Handle
-        id="bottom-target"
-        type="target"
-        position={Position.Bottom}
-        className="node-handle"
-        style={{
-          background: "#ffffff",
-          width: 10,
-          height: 10,
-          border: "2px solid #0a0a0a",
-          borderRadius: "50%",
-          boxShadow: "0 0 0 0 transparent",
-          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
-        }}
-      />
-      <Handle
         id="bottom-source"
         type="source"
         position={Position.Bottom}
         className="node-handle"
         style={{
-          background: "#ffffff",
+          bottom: -5,
+          left: "50%",
+          transform: "translateX(-50%)",
           width: 10,
           height: 10,
-          border: "2px solid #0a0a0a",
-          borderRadius: "50%",
-          boxShadow: "0 0 0 0 transparent",
-          transition: "box-shadow 100ms ease, transform 100ms ease, width 100ms ease, height 100ms ease",
         }}
       />
     </div>

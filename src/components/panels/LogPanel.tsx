@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSimulationStore } from "@/store/useSimulationStore";
-import { ScrollText, ChevronDown, ChevronUp } from "lucide-react";
+import { ScrollText } from "lucide-react";
 
 export function LogPanel() {
-  const [collapsed, setCollapsed] = useState(false);
   const logs = useSimulationStore((s) => s.simulation.logs);
+  const activePanel = useSimulationStore((s) => s.activePanel);
+  const setActivePanel = useSimulationStore((s) => s.setActivePanel);
+  const collapsed = activePanel !== "logs";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,34 +18,28 @@ export function LogPanel() {
   }, [logs.length]);
 
   return (
-    <div className={`${collapsed ? "flex-[0_0_44px]" : "flex-1 min-h-0"} flex flex-col overflow-hidden border-t border-hairline`}>
-      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-hairline">
-        <ScrollText className="h-3.5 w-3.5 text-body-mid" />
-        <span className="text-[11px] font-normal uppercase tracking-wider text-body-mid">
+    <div className={`flex flex-col border-t border-hairline bg-canvas relative transition-[flex] duration-100 ease-in-out ${collapsed ? '' : 'flex-1'}`} style={{ minHeight: 0 }}>
+      <div
+        onClick={() => setActivePanel(activePanel === "logs" ? null : "logs")}
+        className="flex items-center gap-1.5 px-4 py-3 border-b border-hairline cursor-pointer hover:bg-canvas-soft/50 transition-colors"
+      >
+        <ScrollText className="h-3.5 w-3.5 text-body-mid flex-shrink-0" />
+        <span className="text-[11px] font-mono uppercase tracking-[1.4px] text-body-mid">
           Logs
         </span>
-        <button
-          onClick={() => setCollapsed((v) => !v)}
-          className="ml-auto p-1 hover:bg-white/5 rounded transition-colors"
-          title={collapsed ? "Expand log panel" : "Collapse log panel"}
-        >
-          {collapsed ? (
-            <ChevronDown className="h-3.5 w-3.5 text-body-mid" />
-          ) : (
-            <ChevronUp className="h-3.5 w-3.5 text-body-mid" />
-          )}
-        </button>
       </div>
       {!collapsed && (
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-[11px] leading-relaxed"
-        >
-        {logs.map((log, i) => (
-          <div key={i} className="text-body-mid">
-            {log}
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-[11px] leading-relaxed scrollbar-thin scrollbar-thumb-hairline scrollbar-track-transparent"
+          >
+            {logs.map((log, i) => (
+              <div key={i} className="text-body-mid py-0.5">
+                {log}
+              </div>
+            ))}
           </div>
-        ))}
         </div>
       )}
     </div>

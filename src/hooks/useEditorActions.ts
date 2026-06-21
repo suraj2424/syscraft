@@ -1,30 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState, useMemo } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useSimulationStore } from "@/store/useSimulationStore";
-import { HistoryStack } from "@/utils/history";
+import { useHistoryState } from "@/hooks/useHistoryState";
 import type { SysCraftNode, SysCraftEdge } from "@/types/simulation";
 
 export function useEditorActions() {
-  const historyRef = useRef(new HistoryStack<{ nodes: SysCraftNode[]; edges: SysCraftEdge[] }>());
-  const [historyState, setHistoryState] = useState({
-    canUndo: false,
-    canRedo: false,
-  });
-
-  const refreshHistoryState = useCallback(() => {
-    setHistoryState({
-      canUndo: historyRef.current.canUndo,
-      canRedo: historyRef.current.canRedo,
-    });
-  }, []);
-
-  const pushSnapshot = useCallback(() => {
-    const state = useSimulationStore.getState();
-    historyRef.current.push({ nodes: state.nodes, edges: state.edges });
-    refreshHistoryState();
-  }, [refreshHistoryState]);
+  const { pushSnapshot, undo, redo, canUndo, canRedo } = useHistoryState();
+  const clipboardRef = useRef<{ nodes: SysCraftNode[]; edges: SysCraftEdge[] } | null>(null);
 
   const clearSelection = useCallback(() => {
     useSimulationStore.setState({
@@ -36,10 +20,8 @@ export function useEditorActions() {
 
   const getSelected = useCallback(() => {
     const state = useSimulationStore.getState();
-    const selectedNodeIds = state.selectedNodeIds;
-    const selectedEdgeIds = state.selectedEdgeIds;
-    const nodeIdsSet = new Set(selectedNodeIds);
-    const edgeIdsSet = new Set(selectedEdgeIds);
+    const nodeIdsSet = new Set(state.selectedNodeIds);
+    const edgeIdsSet = new Set(state.selectedEdgeIds);
     const selectedNodes = state.nodes.filter((n) => nodeIdsSet.has(n.id));
     const directlySelectedEdges = state.edges.filter((e) => edgeIdsSet.has(e.id));
     const edgesConnectedToSelectedNodes = state.edges.filter(
@@ -60,14 +42,12 @@ export function useEditorActions() {
       }
     }
     return {
-      ids: selectedNodeIds,
-      edgeIds: selectedEdgeIds,
+      ids: state.selectedNodeIds,
+      edgeIds: state.selectedEdgeIds,
       nodes: selectedNodes,
       edges: mergedEdges,
     };
   }, []);
-
-  const clipboardRef = useRef<{ nodes: SysCraftNode[]; edges: SysCraftEdge[] } | null>(null);
 
   const copy = useCallback(() => {
     const { nodes: selNodes } = getSelected();
@@ -165,60 +145,9 @@ export function useEditorActions() {
     );
   }, [getSelected]);
 
-  const commitPaste = useCallback(() => {
-    pushSnapshot();
-    paste();
-  }, [pushSnapshot, paste]);
-
-  const commitCut = useCallback(() => {
-    pushSnapshot();
-    cut();
-  }, [pushSnapshot, cut]);
-
-  const commitDelete = useCallback(() => {
-    pushSnapshot();
-    deleteSelected();
-  }, [pushSnapshot, deleteSelected]);
-
-  const undo = useCallback(() => {
-    const current = useSimulationStore.getState();
-    const result = historyRef.current.undo({
-      nodes: current.nodes,
-      edges: current.edges,
-    });
-    if (!result.changed) return;
-    const restoredNodes = result.snapshot!.nodes.map((n) => ({ ...n, selected: false }));
-    const restoredEdges = result.snapshot!.edges.map((e) => ({ ...e, selected: false }));
-    useSimulationStore.setState({
-      nodes: restoredNodes,
-      edges: restoredEdges,
-      selectedNodeId: null,
-      selectedNodeIds: [],
-      selectedEdgeIds: [],
-    });
-    refreshHistoryState();
-    useSimulationStore.getState().addLog("Undo");
-  }, [refreshHistoryState]);
-
-  const redo = useCallback(() => {
-    const current = useSimulationStore.getState();
-    const result = historyRef.current.redo({
-      nodes: current.nodes,
-      edges: current.edges,
-    });
-    if (!result.changed) return;
-    const restoredNodes = result.snapshot!.nodes.map((n) => ({ ...n, selected: false }));
-    const restoredEdges = result.snapshot!.edges.map((e) => ({ ...e, selected: false }));
-    useSimulationStore.setState({
-      nodes: restoredNodes,
-      edges: restoredEdges,
-      selectedNodeId: null,
-      selectedNodeIds: [],
-      selectedEdgeIds: [],
-    });
-    refreshHistoryState();
-    useSimulationStore.getState().addLog("Redo");
-  }, [refreshHistoryState]);
+  const commitPaste = useCallback(() => { pushSnapshot(); paste(); }, [pushSnapshot, paste]);
+  const commitCut = useCallback(() => { pushSnapshot(); cut(); }, [pushSnapshot, cut]);
+  const commitDelete = useCallback(() => { pushSnapshot(); deleteSelected(); }, [pushSnapshot, deleteSelected]);
 
   const selectAll = useCallback(() => {
     const state = useSimulationStore.getState();
@@ -241,21 +170,9 @@ export function useEditorActions() {
       redo,
       selectAll,
       pushSnapshot,
-      canUndo: historyState.canUndo,
-      canRedo: historyState.canRedo,
+      canUndo,
+      canRedo,
     }),
-    [
-      historyState.canUndo,
-      historyState.canRedo,
-      copy,
-      cut,
-      commitCut,
-      commitPaste,
-      deleteSelected,
-      undo,
-      redo,
-      selectAll,
-      pushSnapshot,
-    ],
+    [copy, cut, commitCut, commitPaste, commitDelete, undo, redo, selectAll, pushSnapshot, canUndo, canRedo],
   );
 }

@@ -179,6 +179,15 @@ export interface SimState {
   logs: string[];
 }
 
+// ── Health Issues ────────────────────────────────────────────────────
+export interface HealthIssue {
+  severity: "critical" | "warning" | "info";
+  category: string;
+  message: string;
+  recommendation: string;
+  affectedNodes?: string[];
+}
+
 // ── Scenario definitions ──────────────────────────────────────────────
 export interface Scenario {
   id: string;
