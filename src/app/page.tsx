@@ -14,10 +14,11 @@ export default function Page() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-normal text-ink tracking-tight">
             SysCraft
-            <span className="text-body-mid font-normal ml-2 text-sm">System Design Simulator</span>
+            <span className="font-mono text-[10px] uppercase tracking-[1.4px] text-body-mid ml-3">System Design Simulator</span>
           </h1>
         </div>
       </header>
+
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-56 flex-shrink-0 bg-canvas border-r border-hairline overflow-y-auto">
           <ComponentPalette />

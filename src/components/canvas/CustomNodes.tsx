@@ -17,9 +17,9 @@ const colorMap: Record<NodeType, { bg: string; hover: string; border: string; ic
   apiGateway: { bg: "#191919", hover: "#1a1c20", border: "#a0c3ec", icon: "#a0c3ec" },
   webServer: { bg: "#191919", hover: "#1a1c20", border: "#7d8187", icon: "#ffffff" },
   cache: { bg: "#191919", hover: "#1a1c20", border: "#ff7a17", icon: "#ff7a17" },
-  sqlDb: { bg: "#191919", hover: "#1a1c20", border: "#8b5cf6", icon: "#8b5cf6" },
-  noSqlDb: { bg: "#191919", hover: "#1a1c20", border: "#f97316", icon: "#f97316" },
-  messageQueue: { bg: "#191919", hover: "#1a1c20", border: "#ec4899", icon: "#ec4899" },
+  sqlDb: { bg: "#191919", hover: "#1a1c20", border: "#7c3aed", icon: "#7c3aed" },
+  noSqlDb: { bg: "#191919", hover: "#1a1c20", border: "#ff7a17", icon: "#ff7a17" },
+  messageQueue: { bg: "#191919", hover: "#1a1c20", border: "#c4b5fd", icon: "#c4b5fd" },
 };
 
 const iconMap: Record<NodeType, LucideIcon> = {
@@ -132,7 +132,7 @@ function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeDa
             {data.label}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-body-mid font-mono flex-wrap justify-center">
+        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-body-mid font-mono flex-wrap justify-center uppercase tracking-[1.2px]">
           {renderMetrics()}
         </div>
       </div>

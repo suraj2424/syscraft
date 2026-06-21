@@ -43,7 +43,7 @@ export function CriticalIssuesList({ issues }: { issues: HealthIssue[] }) {
               <p className="text-[11px] text-[#ff7a17] font-mono uppercase tracking-[1.2px]">{issue.category}</p>
               <p className="text-sm text-ink mt-1">{issue.message}</p>
               <p className="text-[11px] text-[#ffc285]/80 mt-2 p-2 bg-[#ff7a17]/10 rounded-sm border border-[#ff7a17]/20">
-                <span className="font-medium">Fix:</span> {issue.recommendation}
+                <span className="font-normal">Fix:</span> {issue.recommendation}
               </p>
             </div>
           </div>
@@ -69,7 +69,7 @@ export function WarningIssuesList({ issues }: { issues: HealthIssue[] }) {
               <p className="text-[11px] text-[#7c3aed] font-mono uppercase tracking-[1.2px]">{issue.category}</p>
               <p className="text-sm text-ink mt-1">{issue.message}</p>
               <p className="text-[11px] text-[#c4b5fd]/80 mt-2 p-2 bg-[#7c3aed]/10 rounded-sm border border-[#7c3aed]/20">
-                <span className="font-medium">Action:</span> {issue.recommendation}
+                <span className="font-normal">Action:</span> {issue.recommendation}
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export function InfoIssuesList({ issues }: { issues: HealthIssue[] }) {
               <p className="text-[11px] text-[#a0c3ec] font-mono uppercase tracking-[1.2px]">{issue.category}</p>
               <p className="text-sm text-ink mt-1">{issue.message}</p>
               <p className="text-[11px] text-[#a0c3ec]/80 mt-2 p-2 bg-[#a0c3ec]/10 rounded-sm border border-[#a0c3ec]/20">
-                <span className="font-medium">Tip:</span> {issue.recommendation}
+                <span className="font-normal">Tip:</span> {issue.recommendation}
               </p>
             </div>
           </div>

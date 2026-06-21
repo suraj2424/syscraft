@@ -63,7 +63,7 @@ export function HealthFeedbackPanel() {
       className="flex items-center gap-2 px-4 py-3 border-b border-hairline cursor-pointer hover:bg-canvas-soft/50 transition-colors"
     >
       <ShieldAlert className="h-4 w-4 text-body-mid" />
-      <span className="text-[11px] font-normal uppercase tracking-[1.4px] text-body-mid">
+      <span className="font-mono text-[11px] font-normal uppercase tracking-[1.4px] text-body-mid">
         System Health & Feedback
       </span>
       <div className="ml-auto flex items-center gap-1">
@@ -106,10 +106,10 @@ export function HealthFeedbackPanel() {
                     <span>Active Bottleneck Detected</span>
                   </div>
                   <p className="text-xs text-body-mid font-mono uppercase tracking-[1.2px] mt-1">
-                    The component <span className="text-ink font-sans normal-case font-medium">{bottleneckSummary.nodeLabel} ({bottleneckSummary.nodeType})</span> is causing the majority of request failures.
+                    The component <span className="text-ink font-sans normal-case font-normal">{bottleneckSummary.nodeLabel} ({bottleneckSummary.nodeType})</span> is causing the majority of request failures.
                   </p>
                   <p className="text-xs text-body">
-                    It is responsible for <span className="text-[#ef4444] font-semibold">{bottleneckSummary.failedCount} failed requests</span> ({bottleneckSummary.percentage}% of all failures).
+                    It is responsible for <span className="text-[#ef4444] font-normal">{bottleneckSummary.failedCount} failed requests</span> ({bottleneckSummary.percentage}% of all failures).
                   </p>
                 </div>
               )}
@@ -117,7 +117,7 @@ export function HealthFeedbackPanel() {
               {healthIssues.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center bg-canvas-card border border-hairline rounded-sm p-8">
                   <CheckCircle2 className="h-12 w-12 text-[#10b981] mb-3" />
-                  <p className="text-sm text-ink font-medium">System is healthy</p>
+                  <p className="text-sm text-ink font-normal">System is healthy</p>
                   <p className="text-xs text-body-mid mt-1 font-mono uppercase tracking-[1.2px]">
                     No issues detected. Your architecture is well-configured.
                   </p>

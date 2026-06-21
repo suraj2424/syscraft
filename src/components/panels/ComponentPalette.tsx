@@ -26,9 +26,9 @@ const nodeDefinitions: {
   { id: "apiGateway", label: "API Gateway", color: "#a0c3ec" },
   { id: "webServer", label: "Web Server", color: "#ffffff" },
   { id: "cache", label: "Cache", color: "#ff7a17" },
-  { id: "sqlDb", label: "SQL Database", color: "#8b5cf6" },
-  { id: "noSqlDb", label: "NoSQL Database", color: "#f97316" },
-  { id: "messageQueue", label: "Message Queue", color: "#ec4899" },
+  { id: "sqlDb", label: "SQL Database", color: "#7c3aed" },
+  { id: "noSqlDb", label: "NoSQL Database", color: "#ff7a17" },
+  { id: "messageQueue", label: "Message Queue", color: "#c4b5fd" },
 ];
 
 export function ComponentPalette() {
@@ -42,7 +42,7 @@ export function ComponentPalette() {
   return (
     <div className="h-full flex flex-col overflow-y-auto">
       <div className="px-4 py-3 border-b border-hairline flex-shrink-0">
-        <div className="text-[12px] font-normal uppercase tracking-[1.2px] text-body-mid">
+        <div className="font-mono text-xs uppercase tracking-[1.4px] text-body-mid">
           Components
         </div>
       </div>
@@ -73,7 +73,7 @@ export function ComponentPalette() {
         </div>
 
         <div className="px-4 py-3 border-t border-hairline">
-          <div className="text-[12px] font-normal uppercase tracking-[1.2px] text-body-mid">
+          <div className="font-mono text-xs uppercase tracking-[1.4px] text-body-mid">
             Scenarios
           </div>
         </div>

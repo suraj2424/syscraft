@@ -152,7 +152,7 @@ export function SimulationControls() {
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-body-mid uppercase tracking-wider">
+          <span className="font-mono text-[10px] text-body-mid uppercase tracking-[1.2px]">
             Speed
           </span>
           <div className="flex items-center gap-0.5">

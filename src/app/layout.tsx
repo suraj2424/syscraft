@@ -1,8 +1,16 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "SysCraft - System Design Learning Platform",
@@ -15,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} min-h-screen bg-canvas text-ink antialiased font-sans`}>
+    <html lang="en" className={`${inter.variable} ${geistMono.variable} scroll-smooth`}>
+      <body className="min-h-screen bg-canvas text-ink antialiased font-sans">
         {children}
       </body>
     </html>
