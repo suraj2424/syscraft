@@ -66,6 +66,10 @@ export function MetricsView({ nodeType, metrics, config }: MetricsViewProps) {
           <MetricBar label="Dead Letter" value={m.deadLettered} max={config.maxQueueSize} color="#ef4444" />
         </>
       );
+    case "eventBus":
+      return (
+        <MetricBar label="Published" value={m.messagesPublished} max={10000} color="#ff7a17" />
+      );
     default:
       return null;
   }

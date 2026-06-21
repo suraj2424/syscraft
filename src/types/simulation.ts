@@ -9,7 +9,8 @@ export type NodeType =
   | "cache"
   | "sqlDb"
   | "noSqlDb"
-  | "messageQueue";
+  | "messageQueue"
+  | "eventBus";
 
 // ── LB Strategy ───────────────────────────────────────────────────────
 export type LBStrategy = "round-robin" | "least-connections" | "ip-hash";
@@ -38,6 +39,8 @@ export interface ClientConfig {
   rps: number;
   payloadSizeKB: number;
   readWriteRatio: number; // 0-1, fraction of reads
+  maxRetries?: number;
+  retryBackoffMs?: number;
 }
 
 export interface LoadBalancerConfig {
@@ -50,6 +53,9 @@ export interface ServerConfig {
   processingTimeMs: number;
   failureRate: number; // 0-1
   currentQueue: number;
+  circuitBreakerEnabled?: boolean;
+  circuitBreakerThreshold?: number;
+  circuitBreakerStatus?: "CLOSED" | "OPEN" | "HALF-OPEN";
 }
 
 export interface CacheConfig {
@@ -70,11 +76,18 @@ export interface DatabaseConfig {
 export interface ApiGatewayConfig {
   rateLimitRps: number;
   authEnabled: boolean;
+  circuitBreakerEnabled?: boolean;
+  circuitBreakerThreshold?: number;
+  circuitBreakerStatus?: "CLOSED" | "OPEN" | "HALF-OPEN";
 }
 
 export interface MessageQueueConfig {
   maxQueueSize: number;
   processingRate: number;
+}
+
+export interface EventBusConfig {
+  fanout: boolean;
 }
 
 export type NodeConfig =
@@ -85,7 +98,8 @@ export type NodeConfig =
   | { nodeType: "cache"; config: CacheConfig }
   | { nodeType: "sqlDb"; config: DatabaseConfig }
   | { nodeType: "noSqlDb"; config: DatabaseConfig }
-  | { nodeType: "messageQueue"; config: MessageQueueConfig };
+  | { nodeType: "messageQueue"; config: MessageQueueConfig }
+  | { nodeType: "eventBus"; config: EventBusConfig };
 
 // ── Per-node runtime metrics ──────────────────────────────────────────
 export interface ClientMetrics {
@@ -134,6 +148,10 @@ export interface MessageQueueMetrics {
   deadLettered: number;
 }
 
+export interface EventBusMetrics {
+  messagesPublished: number;
+}
+
 export type NodeMetrics =
   | { nodeType: "client"; metrics: ClientMetrics }
   | { nodeType: "loadBalancer"; metrics: LoadBalancerMetrics }
@@ -142,7 +160,8 @@ export type NodeMetrics =
   | { nodeType: "cache"; metrics: CacheMetrics }
   | { nodeType: "sqlDb"; metrics: DatabaseMetrics }
   | { nodeType: "noSqlDb"; metrics: DatabaseMetrics }
-  | { nodeType: "messageQueue"; metrics: MessageQueueMetrics };
+  | { nodeType: "messageQueue"; metrics: MessageQueueMetrics }
+  | { nodeType: "eventBus"; metrics: EventBusMetrics };
 
 // ── Data attached to every React Flow node ────────────────────────────
 export interface SysCraftNodeData extends Record<string, unknown> {
@@ -152,10 +171,17 @@ export interface SysCraftNodeData extends Record<string, unknown> {
   metrics: NodeMetrics["metrics"];
 }
 
+export interface EdgeConfig {
+  latencyMs: number;
+  jitterMs: number;
+  packetLossRate: number; // 0 to 1
+}
+
 export type SysCraftNode = Node<SysCraftNodeData, NodeType>;
 export type SysCraftEdge = Edge & {
   sourceHandle?: string | null;
   targetHandle?: string | null;
+  config?: EdgeConfig;
 };
 
 // ── Packets (the animated dots traveling along edges) ─────────────────
@@ -170,6 +196,8 @@ export interface Packet {
   edgeProgress: number; // 0-1 for edge animation position
   currentEdgeId: string | null;
   latencyAccMs: number;
+  retryCount?: number;
+  originalClientId?: string;
 }
 
 // ── Simulation tick state ─────────────────────────────────────────────

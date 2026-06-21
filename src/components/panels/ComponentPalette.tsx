@@ -3,7 +3,7 @@
 import React from "react";
 import { useSimulationStore } from "@/store/useSimulationStore";
 import type { NodeType } from "@/types/simulation";
-import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio } from "lucide-react";
+import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio, Share2 } from "lucide-react";
 
 const iconMap: Record<string, any> = {
   client: Zap,
@@ -14,6 +14,7 @@ const iconMap: Record<string, any> = {
   sqlDb: Database,
   noSqlDb: Database,
   messageQueue: Radio,
+  eventBus: Share2,
 };
 
 const nodeDefinitions: {
@@ -29,6 +30,7 @@ const nodeDefinitions: {
   { id: "sqlDb", label: "SQL Database", color: "#7c3aed" },
   { id: "noSqlDb", label: "NoSQL Database", color: "#ff7a17" },
   { id: "messageQueue", label: "Message Queue", color: "#c4b5fd" },
+  { id: "eventBus", label: "Event Bus", color: "#ff7a17" },
 ];
 
 export function ComponentPalette() {

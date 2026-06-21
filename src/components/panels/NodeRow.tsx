@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { memo } from "react";
-import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio } from "lucide-react";
+import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio, Share2 } from "lucide-react";
 import type { NodeType, SysCraftNode } from "@/types/simulation";
 import { InlineConfig } from "./InlineConfig";
 
@@ -13,6 +13,7 @@ const iconMap: Record<NodeType, React.ElementType> = {
   sqlDb: Database,
   noSqlDb: Database,
   messageQueue: Radio,
+  eventBus: Share2,
 };
 
 const colorMap: Record<NodeType, string> = {
@@ -24,6 +25,7 @@ const colorMap: Record<NodeType, string> = {
   sqlDb: "#8b5cf6",
   noSqlDb: "#f97316",
   messageQueue: "#ec4899",
+  eventBus: "#ff7a17",
 };
 
 function formatValue(v: number, decimals = 0) {
@@ -160,6 +162,19 @@ export function NodeRow({ node, isSelected, onSelect }: {
             <div className="bg-canvas-soft border border-hairline rounded-sm px-2 py-1">
               <div className="text-[9px] text-body-mid uppercase tracking-wider">Rate</div>
               <div className="text-xs text-ink font-mono mt-0.5">{formatValue(c.processingRate)}/s</div>
+            </div>
+          </div>
+        );
+      case "eventBus":
+        return (
+          <div className="grid grid-cols-3 gap-1.5 mt-2">
+            <div className="bg-canvas-soft border border-hairline rounded-sm px-2 py-1">
+              <div className="text-[9px] text-body-mid uppercase tracking-wider">Mode</div>
+              <div className="text-xs text-ink font-mono mt-0.5">{c.fanout ? "Fanout" : "RR"}</div>
+            </div>
+            <div className="bg-canvas-soft border border-hairline rounded-sm px-2 py-1 col-span-2">
+              <div className="text-[9px] text-body-mid uppercase tracking-wider">Published</div>
+              <div className="text-xs text-ink font-mono mt-0.5">{formatValue(m.messagesPublished)}</div>
             </div>
           </div>
         );

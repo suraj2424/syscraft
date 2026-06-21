@@ -9,7 +9,7 @@ import {
 } from "@/types/simulation";
 import { SCENARIOS } from "./scenarios";
 
-export type ActivePanel = "config" | "health" | "logs" | null;
+export type ActivePanel = "config" | "health" | "logs" | "sla" | null;
 
 export interface SysCraftStore {
   // React Flow State
@@ -45,6 +45,7 @@ export interface SysCraftStore {
   setSelectedEdgeIds: (ids: string[]) => void;
   removeEdge: (id: string) => void;
   updateNodeConfig: (id: string, config: any) => void;
+  updateEdgeConfig: (id: string, config: any) => void;
   setActivePanel: (panel: ActivePanel) => void;
 
   // Actions — History

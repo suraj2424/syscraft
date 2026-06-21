@@ -67,6 +67,7 @@ export function advanceActivePackets(
   dbWriteTokens: Map<string, number>,
 ): Packet[] {
   const advancedPackets: Packet[] = [];
+  const spawnedList: Packet[] = [];
   const edgeLengthCache = new Map<string, number>();
 
   // Create fast lookup maps to optimize complexity from O(P * N) to O(P + N)
@@ -98,15 +99,20 @@ export function advanceActivePackets(
         liveCounts,
         apiGatewayTokens,
         dbReadTokens,
-        dbWriteTokens
+        dbWriteTokens,
+        spawnedList
       );
       advancedPackets.push({ ...nextP, edgeProgress: 0 });
       continue;
     }
 
+    const currentEdge = edgesMap.get(p.currentEdgeId);
+    const edgeConfig = currentEdge?.config || { latencyMs: 50, jitterMs: 10, packetLossRate: 0 };
+    const jitter = (Math.random() * 2 - 1) * (edgeConfig.jitterMs ?? 0);
+    const totalLatency = Math.max(1, (edgeConfig.latencyMs ?? 50) + jitter);
+
     let edgeLength = edgeLengthCache.get(p.currentEdgeId);
     if (edgeLength === undefined) {
-      const currentEdge = edgesMap.get(p.currentEdgeId);
       const sourceNode = currentEdge ? nodesMap.get(currentEdge.source) : null;
       const targetNode = currentEdge ? nodesMap.get(currentEdge.target) : null;
       edgeLength = sourceNode && targetNode
@@ -115,26 +121,40 @@ export function advanceActivePackets(
       edgeLengthCache.set(p.currentEdgeId, edgeLength);
     }
 
-    const edgeProgressIncrement = (speed * 0.25) / Math.max(1, edgeLength / 100);
+    const edgeProgressIncrement = (speed * 0.20) / Math.max(1, edgeLength / 100);
     const edgeProgress = p.edgeProgress + edgeProgressIncrement;
 
     if (edgeProgress >= 1.0) {
-      const nextP = processPacket(
-        p,
-        nodesMap,
-        edgesBySource,
-        packets,
-        liveCounts,
-        apiGatewayTokens,
-        dbReadTokens,
-        dbWriteTokens
-      );
-      advancedPackets.push({ ...nextP, edgeProgress: 0 });
+      if (Math.random() < (edgeConfig.packetLossRate ?? 0)) {
+        advancedPackets.push({
+          ...p,
+          status: "timeout",
+          edgeProgress: 1.0,
+          latencyAccMs: p.latencyAccMs + Math.round(totalLatency),
+        });
+      } else {
+        const nextP = processPacket(
+          p,
+          nodesMap,
+          edgesBySource,
+          packets,
+          liveCounts,
+          apiGatewayTokens,
+          dbReadTokens,
+          dbWriteTokens,
+          spawnedList
+        );
+        advancedPackets.push({
+          ...nextP,
+          edgeProgress: 0,
+          latencyAccMs: nextP.latencyAccMs + Math.round(totalLatency),
+        });
+      }
     } else {
       advancedPackets.push({ ...p, edgeProgress });
     }
   }
-  return advancedPackets;
+  return [...advancedPackets, ...spawnedList];
 }
 
 export function trimPackets(

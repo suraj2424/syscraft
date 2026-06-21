@@ -48,6 +48,11 @@ export function handleWebServer(
   outSourceHint: string,
 ): Packet {
   const cfg = currentNode.data.config as ServerConfig;
+
+  if (cfg.circuitBreakerEnabled && cfg.circuitBreakerStatus === "OPEN") {
+    return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
+  }
+
   const currentCount = liveCounts.get(currentNode.id) ?? 0;
   // Concurrency limit check: reject if active threads count strictly exceeds limit
   const queueFull = currentCount > cfg.maxConcurrent;
@@ -162,6 +167,11 @@ export function handleApiGateway(
   outSourceHint: string,
 ): Packet {
   const cfg = currentNode.data.config as ApiGatewayConfig;
+
+  if (cfg.circuitBreakerEnabled && cfg.circuitBreakerStatus === "OPEN") {
+    return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
+  }
+
   const tokens = apiGatewayTokens.get(currentNode.id) ?? 0;
   if (tokens < 1.0) {
     return { ...packet, status: "timeout", latencyAccMs: packet.latencyAccMs + 5 };
@@ -248,4 +258,68 @@ export function handleMessageQueue(
     latencyAccMs: packet.latencyAccMs + 1000 / cfg.processingRate,
     status: "in-flight",
   };
+}
+
+export function handleEventBus(
+  packet: Packet,
+  currentNode: SysCraftNode,
+  edgesBySource: Map<string, SysCraftEdge[]>,
+  nodesMap: Map<string, SysCraftNode>,
+  liveCounts: Map<string, number>,
+  spawnedPackets?: Packet[],
+): Packet {
+  const cfg = currentNode.data.config as any;
+  const outEdges = edgesBySource.get(currentNode.id) || [];
+  
+  if (outEdges.length === 0) {
+    return { ...packet, status: "success", latencyAccMs: packet.latencyAccMs + 5 };
+  }
+
+  // Increment messagesPublished metrics count
+  const metrics = currentNode.data.metrics as any;
+  if (metrics) {
+    metrics.messagesPublished = (metrics.messagesPublished ?? 0) + 1;
+  }
+
+  if (cfg.fanout && spawnedPackets) {
+    // Fanout: duplicate packet to all outEdges
+    const nextNodePackets: Packet[] = outEdges.map((e) => {
+      return {
+        ...packet,
+        id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        path: [...packet.path, e.target],
+        currentEdgeId: e.id,
+        edgeProgress: 0,
+        status: "in-flight" as const,
+        latencyAccMs: packet.latencyAccMs + 2,
+      };
+    });
+
+    // Mark live counts for additional nodes
+    nextNodePackets.forEach((p) => {
+      const nextId = p.path[p.path.length - 1];
+      liveCounts.set(nextId, (liveCounts.get(nextId) ?? 0) + 1);
+    });
+
+    // Queue clones in spawnedPackets
+    if (nextNodePackets.length > 1) {
+      spawnedPackets.push(...nextNodePackets.slice(1));
+    }
+
+    return nextNodePackets[0];
+  } else {
+    // Round-robin / single select target
+    const next = pickDownstream(currentNode, edgesBySource, nodesMap, undefined, packet);
+    if (!next) return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
+    const nextEdge = outEdges.find((e) => e.target === next.id);
+
+    return {
+      ...packet,
+      path: [...packet.path, next.id],
+      currentEdgeId: nextEdge?.id ?? `${currentNode.id}-${next.id}`,
+      edgeProgress: 0,
+      status: "in-flight",
+      latencyAccMs: packet.latencyAccMs + 2,
+    };
+  }
 }

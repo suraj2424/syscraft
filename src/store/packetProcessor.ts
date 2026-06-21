@@ -11,6 +11,7 @@ import {
   handleDatabase,
   handleApiGateway,
   handleMessageQueue,
+  handleEventBus,
 } from "./packetRouting";
 
 const TERMINAL_PACKET_STATUSES = new Set<Packet["status"]>(["success", "error", "timeout"]);
@@ -103,6 +104,7 @@ export function processPacket(
   apiGatewayTokens: Map<string, number>,
   dbReadTokens: Map<string, number>,
   dbWriteTokens: Map<string, number>,
+  spawnedPackets?: Packet[],
 ): Packet {
   const currentId = packet.path[packet.path.length - 1];
   const currentNode = nodesMap.get(currentId);
@@ -140,6 +142,9 @@ export function processPacket(
       break;
     case "messageQueue":
       nextP = handleMessageQueue(packet, currentNode, edgesBySource, nodesMap, liveCounts);
+      break;
+    case "eventBus":
+      nextP = handleEventBus(packet, currentNode, edgesBySource, nodesMap, liveCounts, spawnedPackets);
       break;
     default:
       nextP = { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };

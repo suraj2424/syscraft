@@ -23,6 +23,12 @@ export function ConfigForm({ nodeType, config, nodeId, onChange }: ConfigFormPro
           <Field label="Read Ratio">
             <NumberInput value={config.readWriteRatio} onChange={(v) => onChange(nodeId, { readWriteRatio: Math.min(1, Math.max(0, v)) })} min={0} max={1} step={0.1} />
           </Field>
+          <Field label="Max Retries">
+            <NumberInput value={config.maxRetries ?? 0} onChange={(v) => onChange(nodeId, { maxRetries: v })} min={0} max={5} />
+          </Field>
+          <Field label="Retry Backoff ms">
+            <NumberInput value={config.retryBackoffMs ?? 100} onChange={(v) => onChange(nodeId, { retryBackoffMs: v })} min={0} max={2000} step={50} />
+          </Field>
         </>
       );
     case "loadBalancer":
@@ -48,6 +54,12 @@ export function ConfigForm({ nodeType, config, nodeId, onChange }: ConfigFormPro
           <Field label="Auth">
             <ToggleInput value={config.authEnabled} onChange={(v) => onChange(nodeId, { authEnabled: v })} />
           </Field>
+          <Field label="Circuit Breaker">
+            <ToggleInput value={config.circuitBreakerEnabled ?? false} onChange={(v) => onChange(nodeId, { circuitBreakerEnabled: v })} />
+          </Field>
+          <Field label="CB Threshold">
+            <NumberInput value={config.circuitBreakerThreshold ?? 0.5} onChange={(v) => onChange(nodeId, { circuitBreakerThreshold: Math.min(1, Math.max(0.1, v)) })} min={0.1} max={1.0} step={0.05} />
+          </Field>
         </>
       );
     case "webServer":
@@ -61,6 +73,12 @@ export function ConfigForm({ nodeType, config, nodeId, onChange }: ConfigFormPro
           </Field>
           <Field label="Failure Rate">
             <NumberInput value={config.failureRate} onChange={(v) => onChange(nodeId, { failureRate: Math.min(1, Math.max(0, v)) })} min={0} max={1} step={0.01} />
+          </Field>
+          <Field label="Circuit Breaker">
+            <ToggleInput value={config.circuitBreakerEnabled ?? false} onChange={(v) => onChange(nodeId, { circuitBreakerEnabled: v })} />
+          </Field>
+          <Field label="CB Threshold">
+            <NumberInput value={config.circuitBreakerThreshold ?? 0.5} onChange={(v) => onChange(nodeId, { circuitBreakerThreshold: Math.min(1, Math.max(0.1, v)) })} min={0.1} max={1.0} step={0.05} />
           </Field>
         </>
       );
@@ -123,6 +141,12 @@ export function ConfigForm({ nodeType, config, nodeId, onChange }: ConfigFormPro
             <NumberInput value={config.processingRate} onChange={(v) => onChange(nodeId, { processingRate: v })} min={1} max={100000} />
           </Field>
         </>
+      );
+    case "eventBus":
+      return (
+        <Field label="Fan-out Mode">
+          <ToggleInput value={config.fanout} onChange={(v) => onChange(nodeId, { fanout: v })} />
+        </Field>
       );
     default:
       return null;

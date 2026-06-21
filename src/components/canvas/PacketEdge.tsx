@@ -8,6 +8,7 @@ import {
   EdgeLabelRenderer,
 } from "@xyflow/react";
 import { useSimulationStore } from "@/store/useSimulationStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface EdgeWindow {
   arrivalCount: number;
@@ -73,11 +74,8 @@ const PacketEdge = memo(function PacketEdge({
   selected,
   data,
 }: EdgeProps) {
-  const allPackets = useSimulationStore((s) => s.packets);
-
-  const activePackets = useMemo(
-    () => allPackets.filter((p) => p.currentEdgeId === id && p.edgeProgress < 1),
-    [allPackets, id],
+  const activePackets = useSimulationStore(
+    useShallow((s) => s.packets.filter((p) => p.currentEdgeId === id && p.edgeProgress < 1))
   );
 
   const prevOnEdgeRef = useRef<Set<string>>(new Set());
@@ -116,24 +114,38 @@ const PacketEdge = memo(function PacketEdge({
     borderRadius: 8,
   });
 
+  const pathRef = useRef<SVGPathElement>(null);
   const strokeColor = selected ? "#ffffff" : "#363a3f";
 
   return (
     <>
-      <BaseEdge
+      <path
+        ref={pathRef}
         id={id}
-        path={edgePath}
+        className="react-flow__edge-path"
+        d={edgePath}
         style={{
           stroke: strokeColor,
           strokeWidth: selected ? 2.5 : 2,
+          fill: "none",
         }}
       />
       {activePackets.map((packet) => {
         const t = packet.edgeProgress;
-        const dx = targetX - sourceX;
-        const dy = targetY - sourceY;
-        const px = sourceX + dx * t;
-        const py = sourceY + dy * t;
+        let px = sourceX + (targetX - sourceX) * t;
+        let py = sourceY + (targetY - sourceY) * t;
+
+        if (pathRef.current) {
+          try {
+            const totalLength = pathRef.current.getTotalLength();
+            const point = pathRef.current.getPointAtLength(t * totalLength);
+            px = point.x;
+            py = point.y;
+          } catch (e) {
+            // fallback to linear
+          }
+        }
+
         return (
           <g key={packet.id}>
             <circle

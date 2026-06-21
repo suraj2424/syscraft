@@ -6,6 +6,7 @@ import { SimulationControls } from "@/components/panels/SimulationControls"
 import { LogPanel } from "@/components/panels/LogPanel"
 import { HealthFeedbackPanel } from "@/components/panels/HealthFeedbackPanel"
 import { ConfigPanel } from "@/components/panels/ConfigPanel"
+import { SlaPanel } from "@/components/panels/SlaPanel"
 
 export default function Page() {
   return (
@@ -33,6 +34,7 @@ export default function Page() {
         </main>
         <aside className="w-80 flex-shrink-0 bg-canvas border-l border-hairline flex flex-col h-full">
           <HealthFeedbackPanel />
+          <SlaPanel />
           <ConfigPanel />
           <LogPanel />
         </aside>

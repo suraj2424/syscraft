@@ -23,12 +23,14 @@ export function NumberInput({
   min,
   max,
   step = 1,
+  disabled,
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
   max?: number;
   step?: number;
+  disabled?: boolean;
 }) {
   return (
     <input
@@ -37,8 +39,9 @@ export function NumberInput({
       min={min}
       max={max}
       step={step}
+      disabled={disabled}
       onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-      className="w-full px-3 py-2 bg-canvas-soft border border-hairline rounded-sm text-ink text-sm font-normal focus:outline-none focus:border-white/30 transition-colors"
+      className="w-full px-3 py-2 bg-canvas-soft border border-hairline rounded-sm text-ink text-sm font-normal focus:outline-none focus:border-white/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
     />
   );
 }

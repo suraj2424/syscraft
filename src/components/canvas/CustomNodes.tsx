@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Handle, Position, type Node, type NodeProps, useReactFlow } from "@xyflow/react";
 import type { SysCraftNodeData, NodeType } from "@/types/simulation";
-import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio } from "lucide-react";
+import { Zap, Server, Database, HardDrive, Activity, GitBranch, Radio, Share2 } from "lucide-react";
 import PacketEdge from "./PacketEdge";
+import { Sparkline } from "../primitives/Sparkline";
 
 const nodeWidth = 160;
 const nodeHeight = 90;
@@ -20,6 +19,7 @@ const colorMap: Record<NodeType, { bg: string; hover: string; border: string; ic
   sqlDb: { bg: "#191919", hover: "#1a1c20", border: "#7c3aed", icon: "#7c3aed" },
   noSqlDb: { bg: "#191919", hover: "#1a1c20", border: "#ff7a17", icon: "#ff7a17" },
   messageQueue: { bg: "#191919", hover: "#1a1c20", border: "#c4b5fd", icon: "#c4b5fd" },
+  eventBus: { bg: "#191919", hover: "#1a1c20", border: "#ff7a17", icon: "#ff7a17" },
 };
 
 const iconMap: Record<NodeType, LucideIcon> = {
@@ -31,6 +31,7 @@ const iconMap: Record<NodeType, LucideIcon> = {
   sqlDb: Database,
   noSqlDb: Database,
   messageQueue: Radio,
+  eventBus: Share2,
 };
 
 function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeData>>) {
@@ -95,6 +96,38 @@ function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeDa
             <span>Depth: {m.queueDepth}</span>
           </>
         );
+      case "eventBus":
+        return (
+          <>
+            <span>Mode: {c.fanout ? "Fanout" : "RR"}</span>
+            <span>Pub: {m.messagesPublished}</span>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderSparkline = () => {
+    const m = data.metrics as any;
+    switch (data.nodeType) {
+      case "client":
+        return <Sparkline value={m.avgLatencyMs ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
+      case "webServer":
+        return <Sparkline value={m.cpuLoad ?? 0} minVal={0} maxVal={100} color={colors.icon} width={130} height={18} />;
+      case "cache":
+        return <Sparkline value={Math.round((m.hitRate ?? 0) * 100)} minVal={0} maxVal={100} color={colors.icon} width={130} height={18} />;
+      case "messageQueue":
+        return <Sparkline value={m.queueDepth ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
+      case "loadBalancer":
+        return <Sparkline value={m.activeConnections ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
+      case "apiGateway":
+        return <Sparkline value={m.requestsRouted ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
+      case "sqlDb":
+      case "noSqlDb":
+        return <Sparkline value={m.connectionsActive ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
+      case "eventBus":
+        return <Sparkline value={m.messagesPublished ?? 0} minVal={0} color={colors.icon} width={130} height={18} />;
       default:
         return null;
     }
@@ -125,15 +158,18 @@ function SysCraftNodeComponent({ data, selected }: NodeProps<Node<SysCraftNodeDa
           height: 10,
         }}
       />
-      <div className="flex flex-col h-full items-center justify-center p-2 text-center text-ink">
-        <div className="flex items-center gap-1">
-          <Icon className="h-3 w-3" style={{ color: colors.icon }} />
-          <div className="text-sm font-normal max-w-full">
+      <div className="flex flex-col h-full justify-between p-2 text-center text-ink">
+        <div className="flex items-center justify-center gap-1">
+          <Icon className="h-3.5 w-3.5" style={{ color: colors.icon }} />
+          <div className="text-sm font-normal max-w-full truncate">
             {data.label}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-body-mid font-mono flex-wrap justify-center uppercase tracking-[1.2px]">
+        <div className="flex items-center gap-1.5 text-[9px] text-body-mid font-mono flex-wrap justify-center uppercase tracking-[1.1px]">
           {renderMetrics()}
+        </div>
+        <div className="flex justify-center mt-0.5">
+          {renderSparkline()}
         </div>
       </div>
       <Handle
@@ -162,6 +198,7 @@ const nodeTypes = {
   sqlDb: SysCraftNodeComponent,
   noSqlDb: SysCraftNodeComponent,
   messageQueue: SysCraftNodeComponent,
+  eventBus: SysCraftNodeComponent,
 };
 
 const edgeTypes = {

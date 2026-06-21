@@ -8,6 +8,7 @@ import {
   type DatabaseConfig,
   type LoadBalancerMetrics,
   type ServerMetrics,
+  type Packet,
 } from "@/types/simulation";
 import { resetNodeMetrics } from "@/model/nodeDefaults";
 import { isTerminalPacket, resetSimulationState, resetProcessorState } from "./packetProcessor";
@@ -131,8 +132,38 @@ export const createSimulationSlice: StateCreator<SysCraftStore, [], [], any> = (
       dbWriteTokens
     );
 
+    // Intercept failed packets and trigger retries if client maxRetries configured
+    const retriedPacketsList: Packet[] = [];
+    const finalAdvancedPackets = advancedPackets.map((p) => {
+      if (p.status === "error" || p.status === "timeout") {
+        const clientNode = nodes.find((n) => n.id === p.sourceNodeId);
+        const clientCfg = clientNode?.data.config as ClientConfig | undefined;
+        const maxRetries = clientCfg?.maxRetries ?? 0;
+        const retryCount = p.retryCount ?? 0;
+        if (retryCount < maxRetries) {
+          retriedPacketsList.push({
+            id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            sourceNodeId: p.sourceNodeId,
+            targetNodeId: "",
+            requestType: p.requestType,
+            status: "created",
+            createdAt: tickCount,
+            path: [p.sourceNodeId],
+            edgeProgress: 0,
+            currentEdgeId: null,
+            latencyAccMs: p.latencyAccMs + (clientCfg?.retryBackoffMs ?? 100),
+            retryCount: retryCount + 1,
+          });
+          get().addLog(`🔄 Client ${clientNode?.data.label || p.sourceNodeId} retrying failed request (attempt ${retryCount + 1}/${maxRetries})`);
+        }
+      }
+      return p;
+    });
+
+    const totalNewPackets = [...newPackets, ...retriedPacketsList];
+
     // 6. Trim packet history buffer and update metrics
-    const trimmedPackets = trimPackets(newPackets, advancedPackets, terminatedPackets, tickCount);
+    const trimmedPackets = trimPackets(totalNewPackets, finalAdvancedPackets, terminatedPackets, tickCount);
     const updatedNodes = updateNodeMetrics(nodes, trimmedPackets);
 
     // 7. Update additional node-specific configuration updates or metrics details

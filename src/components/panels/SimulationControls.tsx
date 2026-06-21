@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useSimulationStore } from "@/store/useSimulationStore";
 import { useEditorActions } from "@/hooks/useEditorActions";
-import { Play, Pause, Square, Zap, Activity, RotateCcw, Undo2, Redo2 } from "lucide-react";
+import { Play, Pause, Square, Zap, Activity, RotateCcw, Undo2, Redo2, Download, Upload } from "lucide-react";
 
 type ActionVariant = "neutral" | "success" | "danger" | "amber" | "red";
 
@@ -64,6 +64,48 @@ export function SimulationControls() {
   const spawnTrafficSpike = useSimulationStore((s) => s.spawnTrafficSpike);
   const clearScenario = useSimulationStore((s) => s.clearScenario);
   const editor = useEditorActions();
+  const nodes = useSimulationStore((s) => s.nodes);
+  const edges = useSimulationStore((s) => s.edges);
+
+  const exportArchitecture = () => {
+    const data = JSON.stringify({ nodes, edges }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `syscraft-architecture-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    useSimulationStore.getState().addLog("📤 Exported architecture configuration");
+  };
+
+  const importArchitecture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
+          alert("Invalid architecture file. Must contain 'nodes' and 'edges' arrays.");
+          return;
+        }
+        useSimulationStore.setState({
+          nodes: parsed.nodes,
+          edges: parsed.edges,
+          selectedNodeId: null,
+          selectedNodeIds: [],
+          selectedEdgeIds: [],
+          packets: [],
+        });
+        useSimulationStore.getState().addLog(`📥 Imported architecture from ${file.name}`);
+      } catch (err) {
+        alert("Error parsing JSON file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   const activePackets = useMemo(
     () => packets.filter((p) => p.status !== "success" && p.status !== "error" && p.status !== "timeout").length,
@@ -137,6 +179,26 @@ export function SimulationControls() {
           label="Spike 5×"
           variant="red"
         />
+
+        <div className="h-5 w-px bg-hairline mx-0.5" />
+
+        <ActionBtn
+          onClick={exportArchitecture}
+          icon={<Download className="h-3.5 w-3.5" />}
+          label="Export JSON"
+          variant="neutral"
+        />
+
+        <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-normal transition-colors border bg-canvas text-body-mid border-white/25 hover:bg-canvas-soft hover:text-ink cursor-pointer">
+          <Upload className="h-3.5 w-3.5" />
+          <span>Import JSON</span>
+          <input
+            type="file"
+            accept=".json"
+            onChange={importArchitecture}
+            className="hidden"
+          />
+        </label>
       </div>
 
       <div className="flex items-center gap-2 text-[10px] flex-wrap">

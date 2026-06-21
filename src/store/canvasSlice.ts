@@ -62,6 +62,11 @@ export const createCanvasSlice: StateCreator<SysCraftStore, [], [], any> = (set,
           type: "packetEdge",
           sourceHandle: sh,
           targetHandle: th,
+          config: {
+            latencyMs: 50,
+            jitterMs: 10,
+            packetLossRate: 0,
+          },
         } as SysCraftEdge,
       ],
     }));
@@ -126,6 +131,16 @@ export const createCanvasSlice: StateCreator<SysCraftStore, [], [], any> = (set,
       ),
     }));
     get().addLog(`Updated config for ${id}`);
+  },
+
+  updateEdgeConfig: (id: string, config: any) => {
+    get().pushSnapshot();
+    set((s) => ({
+      edges: s.edges.map((e) =>
+        e.id === id ? { ...e, config: { ...e.config, ...config } } : e,
+      ),
+    }));
+    get().addLog(`Updated config for edge ${id}`);
   },
 
   setActivePanel: (panel: ActivePanel) => {

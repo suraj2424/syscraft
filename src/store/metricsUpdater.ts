@@ -13,6 +13,7 @@ import {
   type CacheConfig,
   type DatabaseConfig,
   type MessageQueueConfig,
+  type ApiGatewayConfig,
 } from "@/types/simulation";
 import { isTerminalPacket } from "./packetProcessor";
 
@@ -98,6 +99,23 @@ export function updateNodeMetrics(nodes: SysCraftNode[], packets: Packet[]): Sys
         // Total handled / failed totals from terminal packets
         sm.requestsHandled = terminalPackets.filter((p) => p.status === "success").length;
         sm.requestsFailed = terminalPackets.filter((p) => p.status === "error" || p.status === "timeout").length;
+
+        if (cfg.circuitBreakerEnabled) {
+          const totalReq = sm.requestsHandled + sm.requestsFailed;
+          if (totalReq >= 10) {
+            const failRate = sm.requestsFailed / totalReq;
+            const threshold = cfg.circuitBreakerThreshold ?? 0.5;
+            if (failRate >= threshold) {
+              cfg.circuitBreakerStatus = "OPEN";
+            } else if (failRate < threshold * 0.5 && cfg.circuitBreakerStatus === "OPEN") {
+              cfg.circuitBreakerStatus = "HALF-OPEN";
+            } else if (failRate < 0.1 && cfg.circuitBreakerStatus === "HALF-OPEN") {
+              cfg.circuitBreakerStatus = "CLOSED";
+            }
+          }
+        } else {
+          cfg.circuitBreakerStatus = "CLOSED";
+        }
         break;
       }
       case "cache": {
@@ -142,6 +160,7 @@ export function updateNodeMetrics(nodes: SysCraftNode[], packets: Packet[]): Sys
       }
       case "apiGateway": {
         const agm = m as ApiGatewayMetrics;
+        const cfg = node.data.config as ApiGatewayConfig;
         const gatewayPackets = packets.filter((p) => p.path.includes(node.id));
         
         let routed = 0;
@@ -172,6 +191,23 @@ export function updateNodeMetrics(nodes: SysCraftNode[], packets: Packet[]): Sys
         agm.requestsBlocked = blocked;
         agm.rateLimited = rateLimited;
         agm.authFailed = authFailed;
+
+        if (cfg.circuitBreakerEnabled) {
+          const totalReq = routed + blocked;
+          if (totalReq >= 10) {
+            const failRate = blocked / totalReq;
+            const threshold = cfg.circuitBreakerThreshold ?? 0.5;
+            if (failRate >= threshold) {
+              cfg.circuitBreakerStatus = "OPEN";
+            } else if (failRate < threshold * 0.5 && cfg.circuitBreakerStatus === "OPEN") {
+              cfg.circuitBreakerStatus = "HALF-OPEN";
+            } else if (failRate < 0.1 && cfg.circuitBreakerStatus === "HALF-OPEN") {
+              cfg.circuitBreakerStatus = "CLOSED";
+            }
+          }
+        } else {
+          cfg.circuitBreakerStatus = "CLOSED";
+        }
         break;
       }
       case "sqlDb":

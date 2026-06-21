@@ -183,6 +183,22 @@ export function InlineConfig({ nodeId, nodeType, config }: { nodeId: string; nod
           ))}
         </>
       );
+    case "eventBus":
+      return (
+        <div className="flex items-center justify-between gap-3 py-1.5">
+          <span className="text-[11px] text-body-mid min-w-[80px]">Fan-out</span>
+          <button
+            onClick={() => handleChange("fanout", !config.fanout)}
+            className={`relative w-9 h-5 rounded-full transition-colors ${
+              config.fanout ? "bg-ink/80" : "bg-canvas-mid"
+            }`}
+          >
+            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+              config.fanout ? "translate-x-4" : "translate-x-0.5"
+            }`} />
+          </button>
+        </div>
+      );
     default:
       return null;
   }

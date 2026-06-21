@@ -9,18 +9,20 @@ export const nodeLabels: Record<NodeType, string> = {
   sqlDb: "SQL DB",
   noSqlDb: "NoSQL DB",
   messageQueue: "Message Queue",
+  eventBus: "Event Bus",
 }
 
 export function defaultConfig(nodeType: NodeType): any {
   switch (nodeType) {
-    case "client": return { rps: 100, payloadSizeKB: 4, readWriteRatio: 0.8 }
+    case "client": return { rps: 100, payloadSizeKB: 4, readWriteRatio: 0.8, maxRetries: 3, retryBackoffMs: 100 }
     case "loadBalancer": return { algorithm: "round-robin", rrIndex: 0 }
-    case "apiGateway": return { rateLimitRps: 1000, authEnabled: true }
-    case "webServer": return { maxConcurrent: 50, processingTimeMs: 50, failureRate: 0.01, currentQueue: 0 }
+    case "apiGateway": return { rateLimitRps: 1000, authEnabled: true, circuitBreakerEnabled: false, circuitBreakerThreshold: 0.5, circuitBreakerStatus: "CLOSED" }
+    case "webServer": return { maxConcurrent: 50, processingTimeMs: 50, failureRate: 0.01, currentQueue: 0, circuitBreakerEnabled: false, circuitBreakerThreshold: 0.5, circuitBreakerStatus: "CLOSED" }
     case "cache": return { sizeMB: 512, ttlSec: 300, evictionPolicy: "LRU", hitRate: 0.8 }
     case "sqlDb": return { type: "sql", replicationMode: "single", maxReadThroughput: 500, maxWriteThroughput: 200, replicationLagMs: 0 }
     case "noSqlDb": return { type: "nosql", replicationMode: "single", maxReadThroughput: 2000, maxWriteThroughput: 1000, replicationLagMs: 0 }
     case "messageQueue": return { maxQueueSize: 10000, processingRate: 500 }
+    case "eventBus": return { fanout: true }
   }
 }
 
@@ -34,6 +36,7 @@ export function defaultMetrics(nodeType: NodeType): any {
     case "sqlDb": return { diskIO: 0, queryLatencyMs: 10, replicationLagMs: 0, connectionsActive: 0 }
     case "noSqlDb": return { diskIO: 0, queryLatencyMs: 5, replicationLagMs: 0, connectionsActive: 0 }
     case "messageQueue": return { queueDepth: 0, processedCount: 0, deadLettered: 0 }
+    case "eventBus": return { messagesPublished: 0 }
   }
 }
 
@@ -46,6 +49,7 @@ export const colorMap: Record<NodeType, string> = {
   sqlDb: "#8b5cf6",
   noSqlDb: "#f97316",
   messageQueue: "#ec4899",
+  eventBus: "#ff7a17",
 }
 
 export const NODE_DEFINITIONS = [
@@ -57,6 +61,7 @@ export const NODE_DEFINITIONS = [
   { id: "sqlDb" as NodeType, label: "SQL Database", color: "#8b5cf6" },
   { id: "noSqlDb" as NodeType, label: "NoSQL Database", color: "#f97316" },
   { id: "messageQueue" as NodeType, label: "Message Queue", color: "#ec4899" },
+  { id: "eventBus" as NodeType, label: "Event Bus", color: "#ff7a17" },
 ]
 
 export function makeBaseNode(id: string, type: NodeType, x: number, y: number): SysCraftNode {
