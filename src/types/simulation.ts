@@ -124,6 +124,8 @@ export interface DatabaseMetrics {
 export interface ApiGatewayMetrics {
   requestsRouted: number;
   requestsBlocked: number;
+  rateLimited: number;
+  authFailed: number;
 }
 
 export interface MessageQueueMetrics {

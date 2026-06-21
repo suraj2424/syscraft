@@ -28,6 +28,8 @@ export function MetricsView({ nodeType, metrics, config }: MetricsViewProps) {
         <>
           <MetricBar label="Routed" value={m.requestsRouted} max={10000} color="#8b5cf6" />
           <MetricBar label="Blocked" value={m.requestsBlocked} max={1000} color="#ef4444" />
+          <MetricBar label="Rate Limited" value={m.rateLimited || 0} max={1000} color="#f59e0b" />
+          <MetricBar label="Auth Failed" value={m.authFailed || 0} max={1000} color="#3b82f6" />
         </>
       );
     case "webServer":
@@ -51,6 +53,9 @@ export function MetricsView({ nodeType, metrics, config }: MetricsViewProps) {
         <>
           <MetricBar label="Connections" value={m.connectionsActive} max={config.maxReadThroughput} color="#10b981" />
           <MetricBar label="Query Latency" value={m.queryLatencyMs} max={100} unit="ms" color="#6366f1" />
+          {config.replicationMode === "master-slave" && (
+            <MetricBar label="Replication Lag" value={m.replicationLagMs} max={1000} unit="ms" color="#f59e0b" />
+          )}
         </>
       );
     case "messageQueue":

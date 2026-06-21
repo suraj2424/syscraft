@@ -28,7 +28,7 @@ export function defaultMetrics(nodeType: NodeType): any {
   switch (nodeType) {
     case "client": return { totalSent: 0, failedRequests: 0, avgLatencyMs: 0 }
     case "loadBalancer": return { connectionDistribution: {}, activeConnections: 0 }
-    case "apiGateway": return { requestsRouted: 0, requestsBlocked: 0 }
+    case "apiGateway": return { requestsRouted: 0, requestsBlocked: 0, rateLimited: 0, authFailed: 0 }
     case "webServer": return { cpuLoad: 0, queueSize: 0, activeThreads: 0, requestsHandled: 0, requestsFailed: 0 }
     case "cache": return { hitRate: 0.8, currentSizeMB: 0, evictions: 0, avgLatencyMs: 1 }
     case "sqlDb": return { diskIO: 0, queryLatencyMs: 10, replicationLagMs: 0, connectionsActive: 0 }

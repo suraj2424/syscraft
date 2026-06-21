@@ -29,11 +29,18 @@ export function resetSimulationState(logs: string[]) {
   };
 }
 
+const lbIndices = new Map<string, number>();
+
+export function resetProcessorState() {
+  lbIndices.clear();
+}
+
 export function pickDownstream(
   node: SysCraftNode,
   edgesBySource: Map<string, SysCraftEdge[]>,
   nodesMap: Map<string, SysCraftNode>,
   sourceHandleHint?: string,
+  packet?: Packet,
 ): SysCraftNode | null {
   const nodeType = node.data.nodeType;
   const outEdges = (edgesBySource.get(node.id) || []).filter((e) => {
@@ -52,8 +59,9 @@ export function pickDownstream(
 
     switch (cfg.algorithm) {
       case "round-robin": {
-        const idx = cfg.rrIndex % connectedNodes.length;
-        return connectedNodes[idx];
+        const idx = lbIndices.get(node.id) ?? 0;
+        lbIndices.set(node.id, idx + 1);
+        return connectedNodes[idx % connectedNodes.length];
       }
       case "least-connections": {
         let minNode = connectedNodes[0];
@@ -74,8 +82,8 @@ export function pickDownstream(
         return minNode;
       }
       case "ip-hash": {
-        const firstTarget = connectedNodes[0];
-        const hash = firstTarget ? firstTarget.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) : 0;
+        const clientKey = packet ? packet.sourceNodeId : "";
+        const hash = clientKey.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
         return connectedNodes[hash % connectedNodes.length];
       }
       default:

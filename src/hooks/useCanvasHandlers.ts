@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef } from "react"
 import { useReactFlow, applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange, type Connection } from "@xyflow/react"
 import { useSimulationStore } from "@/store/useSimulationStore"
 import { useEditorActions } from "@/hooks/useEditorActions"
-import type { NodeType } from "@/types/simulation"
+import type { NodeType, SysCraftNode } from "@/types/simulation"
 import { nodeTypes, edgeTypes } from "@/components/canvas/CustomNodes"
 
 export function useCanvasHandlers() {
@@ -20,10 +20,12 @@ export function useCanvasHandlers() {
 
   // Keep refs in sync with store
   useEffect(() => {
-    const store = useSimulationStore.getState()
-    nodesRef.current = store.nodes
-    edgesRef.current = store.edges
+    const unsub = useSimulationStore.subscribe((state) => {
+      nodesRef.current = state.nodes
+      edgesRef.current = state.edges
+    })
     editorRef.current = editor
+    return unsub
   }, [editor])
 
   // Keyboard shortcuts
@@ -47,18 +49,32 @@ export function useCanvasHandlers() {
 
   const onNodeDragStart = useCallback(() => editorRef.current.pushSnapshot(), [])
   const onNodeDragStop = useCallback((_e: any, node: any) => {
-    const updated = nodesRef.current.map((n) => n.id === node.id ? { ...n, position: node.position } : n)
+    const current = useSimulationStore.getState().nodes
+    const updated = current.map((n) => n.id === node.id ? { ...n, position: node.position } : n)
     useSimulationStore.setState({ nodes: updated })
   }, [])
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
-    const hasRemoval = changes.some((c) => c.type === "remove");
-    if (hasRemoval) {
+    const removals = changes.filter((c) => c.type === "remove") as any[];
+    if (removals.length > 0) {
       editorRef.current.pushSnapshot();
+      const removedIds = new Set(removals.map((r) => r.id));
+      const currentStore = useSimulationStore.getState();
+      const updatedNodes = applyNodeChanges(changes, currentStore.nodes) as SysCraftNode[];
+      const updatedEdges = currentStore.edges.filter((e) => !removedIds.has(e.source) && !removedIds.has(e.target));
+      const updatedPackets = currentStore.packets.filter((p) => !p.path.some((id) => removedIds.has(id)));
+      
+      useSimulationStore.setState({
+        nodes: updatedNodes,
+        edges: updatedEdges,
+        packets: updatedPackets,
+        selectedNodeId: currentStore.selectedNodeId && removedIds.has(currentStore.selectedNodeId) ? null : currentStore.selectedNodeId
+      });
+    } else {
+      const current = useSimulationStore.getState().nodes;
+      // @ts-ignore
+      useSimulationStore.setState({ nodes: applyNodeChanges(changes, current) });
     }
-    const current = useSimulationStore.getState().nodes
-    // @ts-ignore
-    useSimulationStore.setState({ nodes: applyNodeChanges(changes, current) })
   }, [])
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {

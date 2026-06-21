@@ -10,11 +10,13 @@ import {
   type ServerMetrics,
 } from "@/types/simulation";
 import { resetNodeMetrics } from "@/model/nodeDefaults";
-import { isTerminalPacket, resetSimulationState } from "./packetProcessor";
+import { isTerminalPacket, resetSimulationState, resetProcessorState } from "./packetProcessor";
 import { updateNodeMetrics } from "./metricsUpdater";
 import { spawnClientPackets, advanceActivePackets, trimPackets } from "./tickHelpers";
 import { SCENARIOS } from "./scenarios";
 import { type SysCraftStore, type ActivePanel } from "./types";
+import { resetRoutingState } from "./packetRouting";
+
 
 let rafId: ReturnType<typeof requestAnimationFrame> | null = null;
 let lastTickTime = 0;
@@ -29,6 +31,8 @@ function resetTokens() {
   apiGatewayTokens.clear();
   dbReadTokens.clear();
   dbWriteTokens.clear();
+  resetRoutingState();
+  resetProcessorState();
 }
 
 export const createSimulationSlice: StateCreator<SysCraftStore, [], [], any> = (set, get) => ({

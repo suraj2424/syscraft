@@ -10,6 +10,13 @@ import {
 } from "@/types/simulation";
 import { pickDownstream } from "./packetProcessor";
 
+const mqIndices = new Map<string, number>();
+
+export function resetRoutingState() {
+  mqIndices.clear();
+}
+
+
 export function handleClientOrLB(
   packet: Packet,
   currentNode: SysCraftNode,
@@ -17,7 +24,7 @@ export function handleClientOrLB(
   nodesMap: Map<string, SysCraftNode>,
   outSourceHint: string,
 ): Packet {
-  const next = pickDownstream(currentNode, edgesBySource, nodesMap, outSourceHint);
+  const next = pickDownstream(currentNode, edgesBySource, nodesMap, outSourceHint, packet);
   if (!next) return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
   const outEdges = edgesBySource.get(currentNode.id) || [];
   const nextEdge = outEdges.find(
@@ -28,6 +35,7 @@ export function handleClientOrLB(
     path: [...packet.path, next.id],
     currentEdgeId: nextEdge?.id ?? `${currentNode.id}-${next.id}`,
     edgeProgress: 0,
+    status: "in-flight",
   };
 }
 
@@ -138,7 +146,8 @@ export function handleDatabase(
 
   if (tokens >= 1.0) {
     tokenMap.set(currentNode.id, tokens - 1.0);
-    return { ...packet, status: "success", latencyAccMs: packet.latencyAccMs + dbLatency + (cfg.replicationLagMs || 0) };
+    const lag = cfg.replicationMode === "master-slave" ? (cfg.replicationLagMs || 0) : 0;
+    return { ...packet, status: "success", latencyAccMs: packet.latencyAccMs + dbLatency + lag };
   } else {
     return { ...packet, status: "timeout", latencyAccMs: packet.latencyAccMs + dbLatency + 100 };
   }
@@ -152,12 +161,18 @@ export function handleApiGateway(
   apiGatewayTokens: Map<string, number>,
   outSourceHint: string,
 ): Packet {
+  const cfg = currentNode.data.config as ApiGatewayConfig;
   const tokens = apiGatewayTokens.get(currentNode.id) ?? 0;
   if (tokens < 1.0) {
     return { ...packet, status: "timeout", latencyAccMs: packet.latencyAccMs + 5 };
   }
 
-  const next = pickDownstream(currentNode, edgesBySource, nodesMap, outSourceHint);
+  // If Auth is enabled, 5% of requests fail authentication and get blocked
+  if (cfg.authEnabled && Math.random() < 0.05) {
+    return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
+  }
+
+  const next = pickDownstream(currentNode, edgesBySource, nodesMap, outSourceHint, packet);
   if (!next) return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
 
   apiGatewayTokens.set(currentNode.id, tokens - 1.0);
@@ -173,6 +188,7 @@ export function handleApiGateway(
     currentEdgeId: nextEdge?.id ?? `${currentNode.id}-${next.id}`,
     edgeProgress: 0,
     latencyAccMs: packet.latencyAccMs + 2,
+    status: "in-flight",
   };
 }
 
@@ -199,7 +215,24 @@ export function handleMessageQueue(
     return { ...packet, status: "error", latencyAccMs: packet.latencyAccMs + 5 };
   }
 
-  const next = targets[0];
+  // Competing consumers pattern: distribute to target with the lowest active load.
+  // If there's a tie, round-robin among them to distribute load evenly.
+  let minCount = Infinity;
+  let candidates: SysCraftNode[] = [];
+  for (const t of targets) {
+    const count = liveCounts.get(t.id) ?? 0;
+    if (count < minCount) {
+      minCount = count;
+      candidates = [t];
+    } else if (count === minCount) {
+      candidates.push(t);
+    }
+  }
+
+  const idx = mqIndices.get(currentNode.id) ?? 0;
+  const next = candidates[idx % candidates.length];
+  mqIndices.set(currentNode.id, (idx + 1) % candidates.length);
+
   const nextEdge = allOutEdges.find((e) => e.target === next.id);
   const nextCount = liveCounts.get(next.id) ?? 0;
 
@@ -213,5 +246,6 @@ export function handleMessageQueue(
     currentEdgeId: nextEdge?.id ?? `${currentNode.id}-${next.id}`,
     edgeProgress: 0,
     latencyAccMs: packet.latencyAccMs + 1000 / cfg.processingRate,
+    status: "in-flight",
   };
 }

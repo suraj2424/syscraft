@@ -142,21 +142,48 @@ export function updateNodeMetrics(nodes: SysCraftNode[], packets: Packet[]): Sys
       }
       case "apiGateway": {
         const agm = m as ApiGatewayMetrics;
-        const packetsAtGateway = packets.filter((p) => {
+        const gatewayPackets = packets.filter((p) => p.path.includes(node.id));
+        
+        let routed = 0;
+        let blocked = 0;
+        let rateLimited = 0;
+        let authFailed = 0;
+        
+        for (const p of gatewayPackets) {
           const idx = p.path.indexOf(node.id);
-          return idx !== -1 && idx < p.path.length - 1;
-        });
-        agm.requestsRouted = packetsAtGateway.filter((p) => p.status !== "error" && p.status !== "timeout").length;
-        agm.requestsBlocked = packetsAtGateway.filter((p) => p.status === "error" || p.status === "timeout").length;
+          if (idx !== -1) {
+            if (idx === p.path.length - 1) {
+              // Packet terminated directly at the gateway (e.g. rate limited or auth blocked)
+              if (p.status === "timeout") {
+                rateLimited++;
+                blocked++;
+              } else if (p.status === "error") {
+                authFailed++;
+                blocked++;
+              }
+            } else {
+              // Packet successfully bypassed the gateway
+              routed++;
+            }
+          }
+        }
+        
+        agm.requestsRouted = routed;
+        agm.requestsBlocked = blocked;
+        agm.rateLimited = rateLimited;
+        agm.authFailed = authFailed;
         break;
       }
       case "sqlDb":
       case "noSqlDb": {
         const dm = m as DatabaseMetrics;
+        const cfg = node.data.config as DatabaseConfig;
         const activePackets = activePacketByNode.get(node.id) || [];
         dm.connectionsActive = activePackets.length;
         dm.queryLatencyMs = node.data.nodeType === "sqlDb" ? 10 : 5;
         if (activePackets.length > 200) dm.queryLatencyMs += 20;
+        dm.replicationLagMs = cfg.replicationMode === "master-slave" ? (cfg.replicationLagMs || 0) : 0;
+        dm.diskIO = Math.min(100, Math.round((activePackets.length / Math.max(1, cfg.maxReadThroughput)) * 100));
         break;
       }
       case "messageQueue": {

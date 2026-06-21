@@ -13,12 +13,15 @@ export function getCategoryIcon(category: string) {
   switch (category) {
     case "Architecture":
     case "Reliability":
+    case "Capacity":
       return <Server className="h-3 w-3 text-[#a0c3ec]" />;
     case "Database":
     case "Cache Efficiency":
       return <Database className="h-3 w-3 text-[#c4b5fd]" />;
     case "Message Queue":
       return <Server className="h-3 w-3 text-[#ffc285]" />;
+    case "API Gateway":
+      return <Server className="h-3 w-3 text-[#a0c3ec]" />;
     default:
       return <ShieldAlert className="h-3 w-3 text-body-mid" />;
   }

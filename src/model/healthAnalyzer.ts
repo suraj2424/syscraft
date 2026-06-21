@@ -83,7 +83,75 @@ export function analyzeHealth(
     issues.push({ severity: "info", category: "Message Queue", message: "No message queue detected", recommendation: "Add a Message Queue for async jobs, background processing, or traffic buffering" })
   }
 
-  return issues
+  // ── Bottleneck Diagnostics Analysis ──────────────────────────────────
+  const failedPackets = packets.filter((p) => p.status === "error" || p.status === "timeout");
+  if (failedPackets.length > 0) {
+    const failureReasons = new Map<string, { count: number; statuses: Set<string> }>();
+    for (const p of failedPackets) {
+      if (p.path.length === 0) continue;
+      const lastNodeId = p.path[p.path.length - 1];
+      if (!failureReasons.has(lastNodeId)) {
+        failureReasons.set(lastNodeId, { count: 0, statuses: new Set() });
+      }
+      const entry = failureReasons.get(lastNodeId)!;
+      entry.count++;
+      entry.statuses.add(p.status);
+    }
+
+    for (const [nodeId, reason] of failureReasons.entries()) {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) continue;
+      const nodeType = node.data.nodeType;
+      const label = node.data.label;
+
+      if (nodeType === "apiGateway") {
+        if (reason.statuses.has("timeout")) {
+          issues.push({
+            severity: "critical",
+            category: "API Gateway",
+            message: `API Gateway ${label} is rate-limiting requests (${reason.count} failed)`,
+            recommendation: "Increase the rateLimitRps parameter, scale horizontally by placing multiple API Gateways behind a Load Balancer, or decrease client RPS.",
+            affectedNodes: [nodeId]
+          });
+        }
+        if (reason.statuses.has("error")) {
+          issues.push({
+            severity: "warning",
+            category: "API Gateway",
+            message: `API Gateway ${label} blocked requests due to Authentication (${reason.count} failed)`,
+            recommendation: "Authentication rejection rate is set to 5% by default. Disable authentication in gateway config if this is not desired.",
+            affectedNodes: [nodeId]
+          });
+        }
+      } else if (nodeType === "webServer") {
+        issues.push({
+          severity: "critical",
+          category: "Capacity",
+          message: `Web Server ${label} is rejecting concurrent requests (${reason.count} failed)`,
+          recommendation: "Increase maxConcurrent config, decrease processingTimeMs, or scale horizontally by placing multiple Web Servers behind a Load Balancer.",
+          affectedNodes: [nodeId]
+        });
+      } else if (nodeType === "sqlDb" || nodeType === "noSqlDb") {
+        issues.push({
+          severity: "critical",
+          category: "Database",
+          message: `Database ${label} throughput limit exceeded (${reason.count} queries timed out)`,
+          recommendation: "Increase maxReadThroughput/maxWriteThroughput config, or place a Cache node before the Database to intercept read traffic.",
+          affectedNodes: [nodeId]
+        });
+      } else if (nodeType === "messageQueue") {
+        issues.push({
+          severity: "critical",
+          category: "Message Queue",
+          message: `Message Queue ${label} buffer overflowed (${reason.count} messages timed out)`,
+          recommendation: "Increase processingRate on the queue, add more backend server consumers, or increase maxQueueSize.",
+          affectedNodes: [nodeId]
+        });
+      }
+    }
+  }
+
+  return issues;
 }
 
 const categoryIconMap: Record<string, string> = {

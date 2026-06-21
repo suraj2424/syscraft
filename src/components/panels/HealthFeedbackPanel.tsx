@@ -26,6 +26,37 @@ export function HealthFeedbackPanel() {
   const warningIssues = useMemo(() => healthIssues.filter((i) => i.severity === "warning"), [healthIssues]);
   const infoIssues = useMemo(() => healthIssues.filter((i) => i.severity === "info"), [healthIssues]);
 
+  const bottleneckSummary = useMemo(() => {
+    const failed = packets.filter((p) => p.status === "error" || p.status === "timeout");
+    if (failed.length === 0) return null;
+
+    const counts = new Map<string, number>();
+    for (const p of failed) {
+      if (p.path.length === 0) continue;
+      const last = p.path[p.path.length - 1];
+      counts.set(last, (counts.get(last) ?? 0) + 1);
+    }
+
+    let topNodeId = "";
+    let maxFailed = 0;
+    for (const [id, count] of counts.entries()) {
+      if (count > maxFailed) {
+        maxFailed = count;
+        topNodeId = id;
+      }
+    }
+
+    const topNode = nodes.find((n) => n.id === topNodeId);
+    if (!topNode) return null;
+
+    return {
+      nodeLabel: topNode.data.label,
+      nodeType: topNode.data.nodeType,
+      failedCount: maxFailed,
+      percentage: ((maxFailed / failed.length) * 100).toFixed(0),
+    };
+  }, [packets, nodes]);
+
   const header = (
     <div
       onClick={() => setActivePanel(activePanel === "health" ? null : "health")}
@@ -68,6 +99,21 @@ export function HealthFeedbackPanel() {
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-hairline scrollbar-track-transparent">
+              {bottleneckSummary && (
+                <div className="p-4 rounded-sm border border-[#ef4444]/30 bg-canvas-card space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-[#ef4444] text-[11px] font-mono uppercase tracking-[1.4px]">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Active Bottleneck Detected</span>
+                  </div>
+                  <p className="text-xs text-body-mid font-mono uppercase tracking-[1.2px] mt-1">
+                    The component <span className="text-ink font-sans normal-case font-medium">{bottleneckSummary.nodeLabel} ({bottleneckSummary.nodeType})</span> is causing the majority of request failures.
+                  </p>
+                  <p className="text-xs text-body">
+                    It is responsible for <span className="text-[#ef4444] font-semibold">{bottleneckSummary.failedCount} failed requests</span> ({bottleneckSummary.percentage}% of all failures).
+                  </p>
+                </div>
+              )}
+
               {healthIssues.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center bg-canvas-card border border-hairline rounded-sm p-8">
                   <CheckCircle2 className="h-12 w-12 text-[#10b981] mb-3" />
